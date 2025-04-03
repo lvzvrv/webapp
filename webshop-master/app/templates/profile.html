@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mb-4">Профиль пользователя</h1>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Здравствуйте, {{ user.username }}!</h5>
+        <p class="card-text"><strong>Баланс:</strong> {{ user.balance }} монет</p>
+        <a href="/orders" class="btn btn-primary">Мои заказы</a>
+    </div>
+</div>
+
+{% endblock %}

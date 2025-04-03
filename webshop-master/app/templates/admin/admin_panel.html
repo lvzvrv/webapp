@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Стили админ-панели */
+    body {
+        background-color: #f5f5f5;
+        font-family: 'Montserrat', sans-serif;
+    }
+
+    .admin-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+
+    .admin-title {
+        color: #333;
+        font-size: 2rem;
+    }
+
+    .product-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .product-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 20px;
+        transition: transform 0.3s;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .product-name {
+        font-size: 1.2rem;
+        color: #333;
+        margin-bottom: 10px;
+    }
+
+    .product-description {
+        color: #666;
+        margin-bottom: 15px;
+    }
+
+    .product-price {
+        font-weight: bold;
+        color: #4caf50;
+        margin-bottom: 15px;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-weight: 500;
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    .btn-add {
+        background-color: #4caf50;
+        color: white;
+    }
+
+    .btn-delete {
+        background-color: #f44336;
+        color: white;
+    }
+
+    .btn-back {
+        background-color: #2196F3;
+        color: white;
+    }
+</style>
+
+<div class="admin-container">
+    <div class="admin-header">
+        <h1 class="admin-title">Админ-панель</h1>
+        <div>
+            <a href="/admin/add-product" class="btn btn-add">Добавить товар</a>
+            <a href="/" class="btn btn-back">На сайт</a>
+        </div>
+    </div>
+
+    <div class="product-list">
+        {% for product in products %}
+        <div class="product-card">
+            <h3 class="product-name">#{{ product.id }} {{ product.name }}</h3>
+            <h3 class="product-name">{{ product.name }}</h3>
+            <p class="product-description">{{ product.description }}</p>
+            <p class="product-price">{{ product.price }} монет</p>
+
+            {% if product.images %}
+            <div style="margin-bottom: 15px;">
+                <strong>Изображения:</strong>
+                <ul>
+                    {% for image in product.images %}
+                    <li><a href="{{ image }}" target="_blank">{{ image|truncate(30) }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <form action="/admin/delete-product/{{ product.id }}" method="post" style="display: inline;">
+                <button type="submit" class="btn btn-delete">Удалить</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

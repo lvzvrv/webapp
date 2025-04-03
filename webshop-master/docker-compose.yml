@@ -1,0 +1,51 @@
+version: '3.8'
+
+x-healthcheck:
+  &healthcheck
+  test: curl -f http://localhost/
+  interval: 5s
+  timeout: 5s
+  retries: 5
+  start_period: 5s
+
+services:
+  db:
+    image: postgres:14.5
+    environment:
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "qweasdzxc1"
+    restart: always
+    networks:
+      - custom
+    healthcheck:
+      <<: *healthcheck
+      test: pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}
+      
+  task:
+    build: .
+    environment:
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "qweasdzxc1"
+      POSTGRES_HOST: "db"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+    ports:
+      - "40004:8000"
+    networks:
+     - custom
+    deploy:
+      resources:
+        limits:
+          cpus: '0.4'
+          memory: 1024M
+        reservations:
+          cpus: '0.2'
+          memory: 128M
+    
+networks:
+  custom:
+    driver: bridge

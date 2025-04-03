@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1 class="mb-4">Мои заказы</h1>
+
+{% if orders %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID заказа</th>
+                <th>Товар</th>
+                <th>Количество</th>
+                <th>Общая стоимость</th>
+                <th>Дата заказа</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+                <tr>
+                    <td>{{ order.id }}</td>
+                    <td>{{ order.product.name }}</td>
+                    <td>{{ order.quantity }}</td>
+                    <td>{{ order.total_price }} монет</td>
+                    <td>{{ order.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                    <td>
+                        <a href="/order/{{ order.id }}" class="btn btn-sm btn-primary">Просмотр</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>У вас нет заказов.</p>
+{% endif %}
+
+{% endblock %}
