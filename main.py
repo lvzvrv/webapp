@@ -104,6 +104,7 @@ def add_product(
         request: Request,
         product_id: int = Form(...),  # Новый параметр для ручного ввода ID
         name: str = Form(...),
+        small_description: str = Form(...),
         description: str = Form(...),
         price: float = Form(...),
         product_type: str = Form(...),
@@ -126,6 +127,7 @@ def add_product(
     product = models.Product(
         id=product_id,
         name=name,
+        small_description=small_description,
         description=description,
         price=price,
         type=product_type
@@ -272,6 +274,27 @@ def buy_product(request: Request, product_id: int = Form(...), db: Session = Dep
 
     return RedirectResponse(url=f"/order/{order.id}", status_code=status.HTTP_302_FOUND)
 
+
+@app.get("/product/{product_id}", response_class=HTMLResponse)
+def product_details(
+        product_id: int,
+        request: Request,
+        db: Session = Depends(get_db)
+):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+
+    # Получаем изображения для товара
+    product.images = product._get_image_urls(db)
+
+    return templates.TemplateResponse(
+        "product_details.html",
+        {
+            "request": request,
+            "product": product
+        }
+    )
 
 @app.get("/order/{order_id}")
 @limiter.limit("2/second")

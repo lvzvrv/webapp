@@ -18,6 +18,7 @@ class Product(Base):
     __tablename__ = "products"
     id = Column(Integer, primary_key=True, autoincrement=False)
     name = Column(String)
+    small_description = Column(String)  # Новое поле для краткого описания
     description = Column(String)
     price = Column(Float)
     type = Column(String)

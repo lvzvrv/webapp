@@ -44,6 +44,40 @@
         font-size: 1.1rem;
     }
 
+    /* Стили для кнопок */
+    .btn-add {
+        background-color: #4caf50;
+        border: none;
+        color: white;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        padding: 8px 0;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        margin-bottom: 8px;
+    }
+
+    .btn-details {
+        background-color: #bb86fc;
+        border: none;
+        color: #121212;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        padding: 8px 0;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-add:hover {
+        background-color: #3d8b40;
+        transform: translateY(-2px);
+    }
+
+    .btn-details:hover {
+        background-color: #9a67cb;
+        transform: translateY(-2px);
+    }
+
     /* Стили для карусели и изображений */
     .carousel {
         aspect-ratio: 1 / 1;
@@ -62,23 +96,6 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-    }
-
-    /* Стили для кнопки */
-    .btn-add {
-        background-color: #4caf50;
-        border: none;
-        color: white;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        padding: 8px 0;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-    }
-
-    .btn-add:hover {
-        background-color: #3d8b40;
-        transform: translateY(-2px);
     }
 
     /* Заголовок */
@@ -151,8 +168,14 @@
 
                 <div class="card-body d-flex flex-column">
                     <h5 class="card-title">{{ product.name }}</h5>
-                    <p class="card-text flex-grow-1">{{ product.description }}</p>
+                    <!-- Отображаем КРАТКОЕ описание вместо полного -->
+                    <p class="card-text flex-grow-1">{{ product.small_description }}</p>
                     <p class="card-text"><strong class="price">{{ product.price }} ₽ 25г</strong></p>
+
+                    <!-- Кнопка "Подробнее" -->
+                    <a href="/product/{{ product.id }}" class="btn btn-details w-100 mb-2">Подробнее</a>
+
+                    <!-- Кнопка "Добавить" -->
                     <form action="/buy" method="post" class="mt-auto">
                         <input type="hidden" name="product_id" value="{{ product.id }}">
                         <button type="submit" class="btn btn-add w-100">Добавить</button>
