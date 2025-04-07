@@ -100,54 +100,51 @@ def add_product_form(request: Request, username: str = Depends(verify_admin)):
 
 
 @app.post("/admin/add-product")
-def add_product(
+async def add_product(
         request: Request,
-        product_id: int = Form(...),  # Новый параметр для ручного ввода ID
+        product_id: int = Form(...),
         name: str = Form(...),
         small_description: str = Form(...),
         description: str = Form(...),
         price: float = Form(...),
-        product_type: str = Form(...),
-        image_urls: Optional[str] = Form(None),
+        image_urls: str = Form(...),
         db: Session = Depends(get_db),
         username: str = Depends(verify_admin)
 ):
-    # Проверяем, не существует ли уже товар с таким ID
-    existing_product = db.query(models.Product).filter(models.Product.id == product_id).first()
-    if existing_product:
-        return templates.TemplateResponse(
-            "admin/add_product.html",
-            {
-                "request": request,
-                "error": f"Товар с ID {product_id} уже существует"
-            }
+    try:
+        # Проверяем существование товара с таким ID
+        if db.query(models.Product).filter(models.Product.id == product_id).first():
+            return templates.TemplateResponse(
+                "admin/add_product.html",
+                {
+                    "request": request,
+                    "error": f"Товар с ID {product_id} уже существует"
+                }
+            )
+
+        # Создаем новый продукт
+        product = models.Product(
+            id=product_id,
+            name=name,
+            small_description=small_description,
+            description=description,
+            price=price,
+            type="tea"  # Указываем тип по умолчанию
         )
 
-    # Создаем новый продукт с указанным ID
-    product = models.Product(
-        id=product_id,
-        name=name,
-        small_description=small_description,
-        description=description,
-        price=price,
-        type=product_type
-    )
-
-    try:
         db.add(product)
         db.commit()
         db.refresh(product)
 
         # Добавляем изображения
-        if image_urls:
-            urls = [url.strip() for url in image_urls.split(',') if url.strip()]
-            for url in urls:
-                product_image = models.ProductImage(
-                    product_id=product.id,
-                    image_path=url
-                )
-                db.add(product_image)
-            db.commit()
+        urls = [url.strip() for url in image_urls.split(',') if url.strip()]
+        for url in urls:
+            product_image = models.ProductImage(
+                product_id=product.id,
+                image_path=url
+            )
+            db.add(product_image)
+        db.commit()
 
         return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
 
@@ -310,6 +307,83 @@ def view_order(request: Request, order_id: int, db: Session = Depends(get_db), r
 
     return templates.TemplateResponse("order.html", {"request": request, "order": order, "user": user})
 
+
+@app.get("/admin/edit-product/{product_id}", response_class=HTMLResponse)
+def edit_product_form(
+        product_id: int,
+        request: Request,
+        db: Session = Depends(get_db),
+        username: str = Depends(verify_admin)
+):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+
+    # Получаем изображения товара
+    product.images = product._get_image_urls(db)
+    image_urls = ", ".join(product.images) if product.images else ""
+
+    return templates.TemplateResponse(
+        "admin/edit_product.html",
+        {
+            "request": request,
+            "product": product,
+            "image_urls": image_urls
+        }
+    )
+
+
+@app.post("/admin/update-product/{product_id}")
+async def update_product(
+        product_id: int,
+        request: Request,
+        name: str = Form(...),
+        small_description: str = Form(...),
+        description: str = Form(...),
+        price: float = Form(...),
+        image_urls: str = Form(...),
+        db: Session = Depends(get_db),
+        username: str = Depends(verify_admin)
+):
+    try:
+        product = db.query(models.Product).filter(models.Product.id == product_id).first()
+        if not product:
+            raise HTTPException(status_code=404, detail="Товар не найден")
+
+        # Обновляем данные товара
+        product.name = name
+        product.small_description = small_description
+        product.description = description
+        product.price = price
+
+        # Удаляем старые изображения
+        db.query(models.ProductImage).filter(models.ProductImage.product_id == product_id).delete()
+
+        # Добавляем новые изображения
+        urls = [url.strip() for url in image_urls.split(',') if url.strip()]
+        for url in urls:
+            product_image = models.ProductImage(
+                product_id=product.id,
+                image_path=url
+            )
+            db.add(product_image)
+
+        db.commit()
+
+        return RedirectResponse(url="/admin", status_code=status.HTTP_303_SEE_OTHER)
+
+    except Exception as e:
+        db.rollback()
+        product.images = product._get_image_urls(db)
+        return templates.TemplateResponse(
+            "admin/edit_product.html",
+            {
+                "request": request,
+                "product": product,
+                "image_urls": image_urls,
+                "error": f"Ошибка при обновлении товара: {str(e)}"
+            }
+        )
 
 @app.get("/logout")
 def logout(request: Request, db: Session = Depends(get_db)):

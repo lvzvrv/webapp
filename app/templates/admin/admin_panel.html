@@ -84,6 +84,17 @@
         background-color: #2196F3;
         color: white;
     }
+
+    .product-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
 </style>
 
 <div class="admin-container">
@@ -117,6 +128,21 @@
             <form action="/admin/delete-product/{{ product.id }}" method="post" style="display: inline;">
                 <button type="submit" class="btn btn-delete">Удалить</button>
             </form>
+        <!-- В карточке товара добавим кнопку редактирования -->
+        <div class="product-card">
+            <h3 class="product-name">#{{ product.id }} {{ product.name }}</h3>
+            <p class="product-description">{{ product.small_description }}</p>
+            <p class="product-price">{{ product.price }} ₽</p>
+
+            <div class="d-flex gap-2">
+                <a href="/admin/edit-product/{{ product.id }}" class="btn btn-primary btn-sm">
+                    Редактировать
+                </a>
+                <form action="/admin/delete-product/{{ product.id }}" method="post">
+                    <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                </form>
+            </div>
+        </div>
         </div>
         {% endfor %}
     </div>
