@@ -175,10 +175,9 @@
                     <!-- Кнопка "Подробнее" -->
                     <a href="/product/{{ product.id }}" class="btn btn-details w-100 mb-2">Подробнее</a>
 
-                    <!-- Кнопка "Добавить" -->
-                    <form action="/buy" method="post" class="mt-auto">
+                    <form action="/add-to-cart" method="post">
                         <input type="hidden" name="product_id" value="{{ product.id }}">
-                        <button type="submit" class="btn btn-add w-100">Добавить</button>
+                        <button type="submit" class="btn btn-add w-100">Добавить в корзину</button>
                     </form>
                 </div>
             </div>

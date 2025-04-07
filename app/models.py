@@ -67,3 +67,12 @@ class Order(Base):
 
     owner = relationship("User", back_populates="orders")
     product = relationship("Product")
+
+class CartItem(Base):
+    __tablename__ = "cart_items"
+
+    id = Column(Integer, primary_key=True)
+    session_id = Column(String)  # Изменили user_id на session_id
+    product_id = Column(Integer)
+    quantity = Column(Integer, default=1)
+    added_at = Column(DateTime, default=datetime.utcnow)

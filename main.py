@@ -16,6 +16,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import secrets
 from typing import Optional
 import uvicorn
+import uuid
 
 Base.metadata.create_all(bind=engine)
 
@@ -32,6 +33,17 @@ ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "secure_admin_password_123"  # В реальном проекте используйте переменные окружения
 security = HTTPBasic()
 
+
+def get_cart_items_count(db: Session, session_id: str) -> int:
+    if not session_id:
+        return 0
+    try:
+        return db.query(models.CartItem).filter(
+            models.CartItem.session_id == session_id
+        ).count()
+    except Exception as e:
+        print(f"Error getting cart items count: {e}")
+        return 0
 
 def verify_admin(credentials: HTTPBasicCredentials = Depends(security)):
     correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
@@ -77,26 +89,66 @@ def index(request: Request, db: Session = Depends(get_db)):
     for product in products:
         product.images = product._get_image_urls(db)
 
+    session_id = request.cookies.get("session_id", "")
+    cart_items_count = get_cart_items_count(db, session_id)
+
     token = request.cookies.get("Authorization")
     user = None
     if token:
         user, token = check_session(request, db)
         user = db.query(models.User).filter(models.User.username == token).first()
-    return templates.TemplateResponse("index.html", {"request": request, "products": products, "user": user})
+
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "products": products,
+            "user": user,
+            "cart_items_count": cart_items_count  # Добавлено
+        }
+    )
 
 
 # Админ-панель
 @app.get("/admin", response_class=HTMLResponse)
-def admin_panel(request: Request, username: str = Depends(verify_admin), db: Session = Depends(get_db)):
+def admin_panel(
+        request: Request,
+        db: Session = Depends(get_db),
+        username: str = Depends(verify_admin)
+):
     products = db.query(models.Product).all()
     for product in products:
         product.images = product._get_image_urls(db)
-    return templates.TemplateResponse("admin/admin_panel.html", {"request": request, "products": products})
+
+    session_id = request.cookies.get("session_id", "")
+    cart_items_count = get_cart_items_count(db, session_id)
+
+    return templates.TemplateResponse(
+        "admin/admin_panel.html",
+        {
+            "request": request,
+            "products": products,
+            "cart_items_count": cart_items_count  # Добавлено
+        }
+    )
 
 
 @app.get("/admin/add-product", response_class=HTMLResponse)
-def add_product_form(request: Request, username: str = Depends(verify_admin)):
-    return templates.TemplateResponse("admin/add_product.html", {"request": request})
+def add_product_form(
+        request: Request,
+        db: Session = Depends(get_db),
+        username: str = Depends(verify_admin)
+):
+    session_id = request.cookies.get("session_id", "")
+    cart_items_count = get_cart_items_count(db, session_id)
+
+    return templates.TemplateResponse(
+        "admin/add_product.html",
+        {
+            "request": request,
+            "cart_items_count": cart_items_count  # Добавлено
+        }
+    )
 
 
 @app.post("/admin/add-product")
@@ -107,34 +159,23 @@ async def add_product(
         small_description: str = Form(...),
         description: str = Form(...),
         price: float = Form(...),
+        product_type: str = Form(...),  # Добавлен параметр типа
         image_urls: str = Form(...),
         db: Session = Depends(get_db),
         username: str = Depends(verify_admin)
 ):
     try:
-        # Проверяем существование товара с таким ID
-        if db.query(models.Product).filter(models.Product.id == product_id).first():
-            return templates.TemplateResponse(
-                "admin/add_product.html",
-                {
-                    "request": request,
-                    "error": f"Товар с ID {product_id} уже существует"
-                }
-            )
-
-        # Создаем новый продукт
         product = models.Product(
             id=product_id,
             name=name,
             small_description=small_description,
             description=description,
             price=price,
-            type="tea"  # Указываем тип по умолчанию
+            type=product_type  # Сохраняем тип товара
         )
 
         db.add(product)
         db.commit()
-        db.refresh(product)
 
         # Добавляем изображения
         urls = [url.strip() for url in image_urls.split(',') if url.strip()]
@@ -150,12 +191,9 @@ async def add_product(
 
     except Exception as e:
         db.rollback()
-        return templates.TemplateResponse(
-            "admin/add_product.html",
-            {
-                "request": request,
-                "error": f"Ошибка при добавлении товара: {str(e)}"
-            }
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ошибка при добавлении товара: {str(e)}"
         )
 
 
@@ -273,23 +311,21 @@ def buy_product(request: Request, product_id: int = Form(...), db: Session = Dep
 
 
 @app.get("/product/{product_id}", response_class=HTMLResponse)
-def product_details(
-        product_id: int,
-        request: Request,
-        db: Session = Depends(get_db)
-):
+def product_details(product_id: int, request: Request, db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Товар не найден")
 
-    # Получаем изображения для товара
     product.images = product._get_image_urls(db)
+    session_id = request.cookies.get("session_id", "")
+    cart_items_count = get_cart_items_count(db, session_id)
 
     return templates.TemplateResponse(
         "product_details.html",
         {
             "request": request,
-            "product": product
+            "product": product,
+            "cart_items_count": cart_items_count  # Добавлено
         }
     )
 
@@ -384,6 +420,157 @@ async def update_product(
                 "error": f"Ошибка при обновлении товара: {str(e)}"
             }
         )
+
+
+@app.post("/add-to-cart")
+async def add_to_cart(
+        request: Request,
+        product_id: int = Form(...),
+        quantity: int = Form(1),  # Добавлен параметр количества
+        db: Session = Depends(get_db)
+):
+    # Получаем или создаем идентификатор сессии
+    session_id = request.cookies.get("session_id", str(uuid.uuid4()))
+
+    # Проверяем существование товара
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Товар не найден")
+
+    # Проверяем, есть ли уже такой товар в корзине
+    cart_item = db.query(models.CartItem).filter(
+        models.CartItem.session_id == session_id,
+        models.CartItem.product_id == product_id
+    ).first()
+
+    if cart_item:
+        cart_item.quantity += quantity  # Увеличиваем количество на указанное значение
+    else:
+        cart_item = models.CartItem(
+            session_id=session_id,
+            product_id=product_id,
+            quantity=quantity
+        )
+        db.add(cart_item)
+
+    db.commit()
+
+    response = RedirectResponse(url="/cart", status_code=status.HTTP_303_SEE_OTHER)
+    if not request.cookies.get("session_id"):
+        response.set_cookie(key="session_id", value=session_id, httponly=True)
+    return response
+
+
+# Просмотр корзины
+@app.get("/cart", response_class=HTMLResponse)
+async def view_cart(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        return templates.TemplateResponse("cart.html", {
+            "request": request,
+            "cart_items": [],
+            "total": 0,
+            "cart_items_count": 0
+        })
+
+    # Получаем элементы корзины с информацией о товарах
+    cart_items = db.query(
+        models.CartItem,
+        models.Product
+    ).join(
+        models.Product,
+        models.CartItem.product_id == models.Product.id
+    ).filter(
+        models.CartItem.session_id == session_id
+    ).all()
+
+    # Преобразуем результат в удобный формат
+    items_with_details = []
+    total = 0
+    for cart_item, product in cart_items:
+        cart_item.product = product  # Добавляем информацию о товаре
+        items_with_details.append(cart_item)
+        total += product.price * cart_item.quantity
+
+    return templates.TemplateResponse("cart.html", {
+        "request": request,
+        "cart_items": items_with_details,  # Передаем items вместо item
+        "total": total,
+        "cart_items_count": len(items_with_details)
+    })
+
+
+@app.post("/update-cart-item/{item_id}")
+async def update_cart_item(
+        item_id: int,
+        request: Request,
+        quantity: int = Form(...),
+        db: Session = Depends(get_db)
+):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    cart_item = db.query(models.CartItem).filter(
+        models.CartItem.id == item_id,
+        models.CartItem.session_id == session_id
+    ).first()
+
+    if cart_item:
+        if quantity <= 0:
+            db.delete(cart_item)
+        else:
+            cart_item.quantity = quantity
+        db.commit()
+
+    return RedirectResponse(url="/cart", status_code=status.HTTP_303_SEE_OTHER)
+
+# Удаление товара из корзины
+@app.post("/remove-from-cart/{item_id}")
+async def remove_from_cart(
+        item_id: int,
+        request: Request,
+        db: Session = Depends(get_db)
+):
+    session_id = request.cookies.get("session_id")
+    if session_id:
+        db.query(models.CartItem).filter(
+            models.CartItem.id == item_id,
+            models.CartItem.session_id == session_id
+        ).delete()
+        db.commit()
+
+    return RedirectResponse(url="/cart", status_code=status.HTTP_303_SEE_OTHER)
+
+
+# Оформление заказа
+@app.post("/checkout")
+async def checkout(
+        request: Request,
+        db: Session = Depends(get_db)
+):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    cart_items = db.query(models.CartItem).filter(
+        models.CartItem.user_id == session_id
+    ).all()
+
+    if not cart_items:
+        return RedirectResponse(url="/cart", status_code=status.HTTP_303_SEE_OTHER)
+
+    # Здесь должна быть логика оформления заказа
+    # Пока просто очищаем корзину
+    db.query(models.CartItem).filter(
+        models.CartItem.user_id == session_id
+    ).delete()
+    db.commit()
+
+    return RedirectResponse(url="/orders", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/logout")
 def logout(request: Request, db: Session = Depends(get_db)):

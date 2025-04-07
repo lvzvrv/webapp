@@ -42,19 +42,59 @@
         line-height: 1.6;
     }
 
-    .btn-buy {
+    .btn-add-to-cart {
         background-color: #4caf50;
         color: white;
         font-weight: 600;
-        padding: 10px 20px;
+        padding: 12px 24px;
         border-radius: 8px;
         border: none;
         transition: all 0.3s ease;
+        font-size: 1.1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
 
-    .btn-buy:hover {
+    .btn-add-to-cart:hover {
         background-color: #3d8b40;
         transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+    .quantity-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #bb86fc;
+        color: white;
+        border: none;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .quantity-btn:hover {
+        background-color: #9a67cb;
+        transform: scale(1.1);
+    }
+
+    .quantity-display {
+        font-size: 1.2rem;
+        font-weight: 600;
+        min-width: 30px;
+        text-align: center;
     }
 </style>
 
@@ -85,11 +125,49 @@
             <div class="product-description">
                 {{ product.description }}
             </div>
-            <form action="/buy" method="post">
+
+            <div class="quantity-controls">
+                <button type="button" class="quantity-btn" id="decrease-quantity">-</button>
+                <span class="quantity-display" id="quantity-display">1</span>
+                <button type="button" class="quantity-btn" id="increase-quantity">+</button>
+            </div>
+
+            <form action="/add-to-cart" method="post" id="add-to-cart-form">
                 <input type="hidden" name="product_id" value="{{ product.id }}">
-                <button type="submit" class="btn-buy">Добавить в корзину</button>
+                <input type="hidden" name="quantity" value="1" id="quantity-input">
+                <button type="submit" class="btn-add-to-cart">
+                    <i class="bi bi-cart-plus"></i> Добавить в корзину
+                </button>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const quantityDisplay = document.getElementById('quantity-display');
+        const quantityInput = document.getElementById('quantity-input');
+        const increaseBtn = document.getElementById('increase-quantity');
+        const decreaseBtn = document.getElementById('decrease-quantity');
+
+        let quantity = 1;
+
+        increaseBtn.addEventListener('click', function() {
+            quantity++;
+            updateQuantity();
+        });
+
+        decreaseBtn.addEventListener('click', function() {
+            if (quantity > 1) {
+                quantity--;
+                updateQuantity();
+            }
+        });
+
+        function updateQuantity() {
+            quantityDisplay.textContent = quantity;
+            quantityInput.value = quantity;
+        }
+    });
+</script>
 {% endblock %}

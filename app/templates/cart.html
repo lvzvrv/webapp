@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .cart-container {
+        background-color: #1e1e1e;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-top: 2rem;
+    }
+
+    .cart-item {
+        display: flex;
+        align-items: center;
+        padding: 1.5rem 0;
+        border-bottom: 1px solid #333;
+        gap: 1.5rem;
+    }
+
+    .cart-item-image {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    .cart-item-info {
+        flex-grow: 1;
+    }
+
+    .cart-item-title {
+        color: #bb86fc;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .cart-item-price {
+        color: #4caf50;
+        font-weight: 600;
+    }
+
+    .quantity-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        margin: 1rem 0;
+    }
+
+    .quantity-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: #bb86fc;
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .quantity-btn:hover {
+        background-color: #9a67cb;
+        transform: scale(1.1);
+    }
+
+    .quantity-display {
+        min-width: 30px;
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .remove-btn {
+        background-color: #f44336;
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .remove-btn:hover {
+        background-color: #d32f2f;
+        transform: translateY(-2px);
+    }
+
+    .cart-total {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #e0e0e0;
+        margin: 2rem 0;
+        text-align: right;
+        padding: 1.2rem;
+        background-color: #2d2d2d;
+        border-radius: 10px;
+    }
+
+    .cart-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .btn-back {
+        background-color: transparent;
+        color: #bb86fc;
+        border: 2px solid #bb86fc;
+        font-weight: 600;
+        padding: 12px 24px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        flex: 1;
+        text-align: center;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-back:hover {
+        background-color: #bb86fc;
+        color: #121212;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(187, 134, 252, 0.2);
+    }
+
+    .btn-checkout {
+        background-color: #4caf50;
+        color: white;
+        font-weight: 600;
+        padding: 12px 24px;
+        border-radius: 8px;
+        border: none;
+        transition: all 0.3s ease;
+        flex: 1;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-checkout:hover {
+        background-color: #3d8b40;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
+    }
+
+    .empty-cart {
+        text-align: center;
+        padding: 3rem 0;
+        color: #b0b0b0;
+    }
+
+    .empty-cart .btn {
+        margin-top: 1.5rem;
+        padding: 10px 20px;
+    }
+</style>
+
+<div class="container">
+    <div class="cart-container">
+        <h2 class="mb-4">Ваша корзина</h2>
+
+        {% if not cart_items %}
+        <div class="empty-cart">
+            <p>Ваша корзина пуста</p>
+            <a href="/" class="btn btn-primary">
+                <i class="bi bi-arrow-left"></i> Вернуться в каталог
+            </a>
+        </div>
+        {% else %}
+            {% for cart_item in cart_items %}
+            <div class="cart-item">
+                {% if cart_item.product.images %}
+                <img src="{{ cart_item.product.images[0] }}" class="cart-item-image" alt="{{ cart_item.product.name }}">
+                {% endif %}
+
+                <div class="cart-item-info">
+                    <h5 class="cart-item-title">{{ cart_item.product.name }}</h5>
+                    <p class="cart-item-price">{{ cart_item.product.price }} ₽ × {{ cart_item.quantity }} = {{ cart_item.product.price * cart_item.quantity }} ₽</p>
+
+                    <div class="quantity-controls">
+                        <form action="/update-cart-item/{{ cart_item.id }}" method="post">
+                            <input type="hidden" name="quantity" value="{{ cart_item.quantity - 1 }}">
+                            <button type="submit" class="quantity-btn" {% if cart_item.quantity <= 1 %}disabled{% endif %}>
+                                <i class="bi bi-dash"></i>
+                            </button>
+                        </form>
+
+                        <span class="quantity-display">{{ cart_item.quantity }}</span>
+
+                        <form action="/update-cart-item/{{ cart_item.id }}" method="post">
+                            <input type="hidden" name="quantity" value="{{ cart_item.quantity + 1 }}">
+                            <button type="submit" class="quantity-btn">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </form>
+
+                        <form action="/remove-from-cart/{{ cart_item.id }}" method="post">
+                            <button type="submit" class="remove-btn">
+                                <i class="bi bi-trash"></i> Удалить
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="cart-total">
+                Итого: {{ total }} ₽
+            </div>
+
+            <div class="cart-actions">
+                <a href="/" class="btn-back">
+                    <i class="bi bi-arrow-left"></i> Назад в каталог
+                </a>
+                <form action="/checkout" method="post">
+                    <button type="submit" class="btn-checkout">
+                        <i class="bi bi-bag-check"></i> Оформить заказ
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
