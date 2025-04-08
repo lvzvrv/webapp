@@ -1,10 +1,8 @@
 from fastapi import FastAPI, Request, Depends, Form, status, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-from sqlalchemy import text, insert
-from app.database import engine, SessionLocal, init_db
+from app.database import engine, SessionLocal
 from app import models, auth
 from app.models import Base
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -14,8 +12,6 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.auth import get_auth_token, check_cookies
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import secrets
-from typing import Optional
-import uvicorn
 import uuid
 import os
 
