@@ -39,15 +39,7 @@ services:
       - "8080:8000"
     networks:
      - custom
-    deploy:
-      resources:
-        limits:
-          cpus: '0.4'
-          memory: 1024M
-        reservations:
-          cpus: '0.2'
-          memory: 128M
-    
+
 networks:
   custom:
     driver: bridge
