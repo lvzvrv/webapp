@@ -557,7 +557,7 @@ async def checkout(
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     cart_items = db.query(models.CartItem).filter(
-        models.CartItem.user_id == session_id
+        models.CartItem.session_id == session_id
     ).all()
 
     if not cart_items:
@@ -566,7 +566,7 @@ async def checkout(
     # Здесь должна быть логика оформления заказа
     # Пока просто очищаем корзину
     db.query(models.CartItem).filter(
-        models.CartItem.user_id == session_id
+        models.CartItem.session_id == session_id
     ).delete()
     db.commit()
 
@@ -580,12 +580,3 @@ def logout(request: Request, db: Session = Depends(get_db)):
         response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
         response.delete_cookie(key="Authorization")
         return response
-
-
-if __name__ == "__main__":
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-    )

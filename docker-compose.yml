@@ -14,7 +14,7 @@ services:
     environment:
       POSTGRES_DB: "postgres"
       POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "qweasdzxc1"
+      POSTGRES_PASSWORD: "BratkaIlya2015"
     restart: always
     networks:
       - custom
@@ -27,14 +27,14 @@ services:
     environment:
       POSTGRES_DB: "postgres"
       POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "qweasdzxc1"
+      POSTGRES_PASSWORD: "BratkaIlya2015"
       POSTGRES_HOST: "db"
     depends_on:
       db:
         condition: service_healthy
     restart: always
     ports:
-      - "40004:8000"
+      - "8080:8000"
     networks:
      - custom
     deploy:
