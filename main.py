@@ -91,9 +91,6 @@ def index(request: Request, db: Session = Depends(get_db)):
 
     token = request.cookies.get("Authorization")
     user = None
-    if token:
-        user, token = check_session(request, db)
-        user = db.query(models.User).filter(models.User.username == token).first()
 
     return templates.TemplateResponse(
         "index.html",
@@ -567,7 +564,7 @@ async def checkout(
     ).delete()
     db.commit()
 
-    return RedirectResponse(url="/orders", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.get("/logout")
 def logout(request: Request, db: Session = Depends(get_db)):
