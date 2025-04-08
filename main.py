@@ -17,6 +17,7 @@ import secrets
 from typing import Optional
 import uvicorn
 import uuid
+import os
 
 Base.metadata.create_all(bind=engine)
 
@@ -29,8 +30,8 @@ app.add_middleware(SlowAPIMiddleware)
 templates = Jinja2Templates(directory="app/templates")
 
 # Конфигурация админ-панели
-ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "secure_admin_password_123"  # В реальном проекте используйте переменные окружения
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME')
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')  # В реальном проекте используйте переменные окружения
 security = HTTPBasic()
 
 

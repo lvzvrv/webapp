@@ -3,10 +3,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 
-db_host = "db"
-db_user = "postgres"
-db_dbname = "postgres"
-db_password = "BratkaIlya2015"
+db_host = os.getenv('POSTGRES_HOST')
+db_user = os.getenv('POSTGRES_USER')
+db_dbname = os.getenv('POSTGRES_DB')
+db_password = os.getenv('POSTGRES_PASSWORD')
 
 DATABASE_URL = f"postgresql://{db_user}:{db_password}@{db_host}:5432/{db_dbname}"
 
