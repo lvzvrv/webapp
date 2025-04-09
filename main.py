@@ -426,7 +426,7 @@ async def update_product(
 async def add_to_cart(
         request: Request,
         product_id: int = Form(...),
-        quantity: int = Form(1),  # Добавлен параметр количества
+        quantity: int = Form(1),
         db: Session = Depends(get_db)
 ):
     # Получаем или создаем идентификатор сессии
@@ -455,7 +455,9 @@ async def add_to_cart(
 
     db.commit()
 
-    response = RedirectResponse(url="/cart", status_code=status.HTTP_303_SEE_OTHER)
+    referer = request.headers.get('referer', '/')
+    response = RedirectResponse(url=referer, status_code=status.HTTP_303_SEE_OTHER)
+
     if not request.cookies.get("session_id"):
         response.set_cookie(key="session_id", value=session_id, httponly=True)
     return response
@@ -557,7 +559,7 @@ async def checkout(
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     cart_items = db.query(models.CartItem).filter(
-        models.CartItem.user_id == session_id
+        models.CartItem.session_id == session_id
     ).all()
 
     if not cart_items:
@@ -566,11 +568,20 @@ async def checkout(
     # Здесь должна быть логика оформления заказа
     # Пока просто очищаем корзину
     db.query(models.CartItem).filter(
-        models.CartItem.user_id == session_id
+        models.CartItem.session_id == session_id
     ).delete()
     db.commit()
 
-    return RedirectResponse(url="/orders", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
+@app.get("/logout")
+def logout(request: Request, db: Session = Depends(get_db)):
+    token = request.cookies.get("Authorization")
+    if token:
+        check_session(request, db)
+        response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+        response.delete_cookie(key="Authorization")
+        return response
 
 @app.get("/logout")
 def logout(request: Request, db: Session = Depends(get_db)):

@@ -2,190 +2,277 @@
 
 {% block content %}
 <style>
-    /* Тёмная тема и шрифты */
-    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
-
-    body {
-        background-color: #121212;
-        color: #e0e0e0;
-        font-family: 'Montserrat', sans-serif;
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 15px;
+        padding: 15px;
     }
 
-    /* Стили для карточек */
-    .card {
-        background-color: #1e1e1e;
-        border: 1px solid #333;
+    .product-card {
+        background-color: var(--card-bg);
         border-radius: 12px;
         overflow: hidden;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        transition: all 0.3s ease;
+        border: 1px solid var(--border-color);
+    }
+
+    .product-image-container {
+        width: 100%;
+        aspect-ratio: 1/1;
+        position: relative;
+        overflow: hidden;
+        touch-action: pan-y;
+    }
+
+    .product-image-slider {
+        display: flex;
+        width: 100%;
         height: 100%;
+        transition: transform 0.3s ease;
     }
 
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(187, 134, 252, 0.2);
+    .product-image {
+        flex: 0 0 100%;
+        height: 100%;
+        object-fit: cover;
+        user-select: none;
     }
 
-    .card-title {
-        color: #bb86fc;
+    .product-body {
+        padding: 15px;
+    }
+
+    .product-title {
+        color: var(--primary-color);
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
         font-weight: 600;
-        font-size: 1.2rem;
     }
 
-    .card-text {
-        color: #b0b0b0;
-        font-size: 0.95rem;
+    .product-desc {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
-    /* Стиль для цены */
-    .price {
-        color: #4caf50;
+    .product-price {
+        color: var(--secondary-color);
         font-weight: 700;
         font-size: 1.1rem;
+        margin-bottom: 1rem;
     }
 
-    /* Стили для кнопок */
-    .btn-add {
-        background-color: #4caf50;
-        border: none;
-        color: white;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        padding: 8px 0;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        margin-bottom: 8px;
+    .product-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
     }
 
     .btn-details {
-        background-color: #bb86fc;
+        background-color: var(--primary-color);
+        color: white;
         border: none;
-        color: #121212;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        padding: 8px 0;
-        border-radius: 8px;
-        transition: all 0.3s ease;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        flex: 2;
     }
 
-    .btn-add:hover {
-        background-color: #3d8b40;
-        transform: translateY(-2px);
+    .btn-add {
+        background-color: var(--secondary-color);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        flex: 1;
+        transition: all 0.3s;
     }
 
-    .btn-details:hover {
-        background-color: #9a67cb;
-        transform: translateY(-2px);
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-right: 5px;
     }
 
-    /* Стили для карусели и изображений */
-    .carousel {
-        aspect-ratio: 1 / 1;
-        background-color: #2d2d2d;
+    .quantity-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        cursor: pointer;
     }
 
-    .carousel-inner {
-        height: 100%;
+    .quantity-display {
+        min-width: 30px;
+        text-align: center;
+        font-size: 0.9rem;
     }
 
-    .carousel-item {
-        height: 100%;
-    }
-
-    .carousel-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    /* Заголовок */
-    h1 {
-        color: #bb86fc;
-        font-weight: 700;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        font-size: 2rem;
-        margin-bottom: 1.5rem !important;
-    }
-
-    /* Адаптация для мобильных */
     @media (max-width: 768px) {
-        .col-md-4 {
-            padding: 0 8px;
-            margin-bottom: 16px;
+        .product-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 10px;
         }
 
-        .row {
-            margin-left: -8px;
-            margin-right: -8px;
+        .product-body {
+            padding: 12px;
         }
+    }
 
-        h1 {
-            font-size: 1.5rem;
-            text-align: center;
-        }
-
-        .card-title {
-            font-size: 1.1rem;
-        }
-
-        .card-text {
-            font-size: 0.9rem;
-        }
-
-        .price {
-            font-size: 1rem;
+    @media (max-width: 480px) {
+        .product-grid {
+            grid-template-columns: 1fr;
         }
     }
 </style>
 
-<h1 class="mb-4">Добро пожаловать в Tea High!</h1>
-
-{% if products %}
-    <div class="row">
+<div class="product-grid">
     {% for product in products %}
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <!-- Слайдер для изображений -->
-                {% if product.images %}
-                    <div id="carousel{{ product.id }}" class="carousel slide" data-bs-ride="carousel">
-                        <div class="carousel-inner">
-                            {% for image in product.images %}
-                                <div class="carousel-item {% if loop.first %}active{% endif %}">
-                                    <img src="{{ image }}" class="d-block" alt="Product Image">
-                                </div>
-                            {% endfor %}
-                        </div>
-                        <button class="carousel-control-prev" type="button" data-bs-target="#carousel{{ product.id }}" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Previous</span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#carousel{{ product.id }}" data-bs-slide="next">
-                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Next</span>
-                        </button>
-                    </div>
-                {% endif %}
-
-                <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{{ product.name }}</h5>
-                    <!-- Отображаем КРАТКОЕ описание вместо полного -->
-                    <p class="card-text flex-grow-1">{{ product.small_description }}</p>
-                    <p class="card-text"><strong class="price">{{ product.price }} ₽ 25г</strong></p>
-
-                    <!-- Кнопка "Подробнее" -->
-                    <a href="/product/{{ product.id }}" class="btn btn-details w-100 mb-2">Подробнее</a>
-
-                    <form action="/add-to-cart" method="post">
-                        <input type="hidden" name="product_id" value="{{ product.id }}">
-                        <button type="submit" class="btn btn-add w-100">Добавить в корзину</button>
-                    </form>
-                </div>
+    <div class="product-card">
+        <div class="product-image-container" id="container-{{ product.id }}">
+            <div class="product-image-slider" id="slider-{{ product.id }}">
+                {% for image in product.images %}
+                <img src="{{ image }}" class="product-image" alt="{{ product.name }}">
+                {% endfor %}
             </div>
         </div>
-    {% endfor %}
-    </div>
-{% else %}
-    <p class="text-muted text-center">Нет доступных товаров.</p>
-{% endif %}
 
+        <div class="product-body">
+            <h3 class="product-title">{{ product.name }}</h3>
+            <p class="product-desc">{{ product.small_description }}</p>
+            <p class="product-price">{{ product.price }} ₽</p>
+
+            <div class="product-actions">
+                <a href="/product/{{ product.id }}" class="btn btn-details">
+                    Подробнее
+                </a>
+                <div class="quantity-control">
+                    <button class="quantity-btn minus" data-product-id="{{ product.id }}">-</button>
+                    <span class="quantity-display" id="qty-{{ product.id }}">1</span>
+                    <button class="quantity-btn plus" data-product-id="{{ product.id }}">+</button>
+                </div>
+                <button class="btn btn-add add-to-cart" data-product-id="{{ product.id }}">
+                    Добавить
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Инициализация свайпа для изображений
+        {% for product in products %}
+        {% if product.images|length > 1 %}
+        (function() {
+            const container = document.getElementById('container-{{ product.id }}');
+            const slider = document.getElementById('slider-{{ product.id }}');
+            let startX, currentX, isDragging = false;
+            let currentIndex = 0;
+
+            container.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+                slider.style.transition = 'none';
+            }, { passive: true });
+
+            container.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                currentX = e.touches[0].clientX;
+                const diff = startX - currentX;
+                slider.style.transform = `translateX(calc(-${currentIndex * 100}% - ${diff}px))`;
+            }, { passive: true });
+
+            container.addEventListener('touchend', () => {
+                if (!isDragging) return;
+                isDragging = false;
+
+                const diff = startX - currentX;
+                if (Math.abs(diff) > 50) {
+                    if (diff > 0 && currentIndex < {{ product.images|length }} - 1) {
+                        currentIndex++;
+                    } else if (diff < 0 && currentIndex > 0) {
+                        currentIndex--;
+                    }
+                }
+
+                slider.style.transition = 'transform 0.3s ease';
+                slider.style.transform = `translateX(-${currentIndex * 100}%)`;
+            });
+        })();
+        {% endif %}
+        {% endfor %}
+
+        // Обработчики для кнопок +/-
+        document.querySelectorAll('.quantity-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const productId = this.dataset.productId;
+                const display = document.getElementById(`qty-${productId}`);
+                let qty = parseInt(display.textContent);
+
+                if (this.classList.contains('minus') && qty > 1) {
+                    qty--;
+                } else if (this.classList.contains('plus')) {
+                    qty++;
+                }
+
+                display.textContent = qty;
+            });
+        });
+
+        // Обработчик для кнопки "Добавить"
+        document.querySelectorAll('.add-to-cart').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const productId = this.dataset.productId;
+                const quantity = parseInt(document.getElementById(`qty-${productId}`).textContent);
+                const originalText = this.textContent;
+
+                this.textContent = '...';
+                this.disabled = true;
+
+                try {
+                    const response = await fetch('/add-to-cart', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `product_id=${productId}&quantity=${quantity}`
+                    });
+
+                    if (response.ok) {
+                        updateCartCounter(quantity);
+                        this.textContent = '✓ Добавлено';
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                            this.disabled = false;
+                        }, 1500);
+                    } else {
+                        throw new Error('Ошибка добавления');
+                    }
+                } catch (error) {
+                    this.textContent = 'Ошибка';
+                    setTimeout(() => {
+                        this.textContent = originalText;
+                        this.disabled = false;
+                    }, 1500);
+                }
+            });
+        });
+    });
+</script>
 {% endblock %}

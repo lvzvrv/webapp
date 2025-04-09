@@ -6,7 +6,13 @@
         background-color: #1e1e1e;
         border-radius: 12px;
         padding: 2rem;
-        margin-top: 2rem;
+        margin: 2rem auto;
+        max-width: 800px;
+    }
+
+    .cart-header {
+        text-align: center;
+        margin-bottom: 2rem;
     }
 
     .cart-item {
@@ -58,12 +64,6 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .quantity-btn:hover {
-        background-color: #9a67cb;
-        transform: scale(1.1);
     }
 
     .quantity-display {
@@ -80,12 +80,6 @@
         border-radius: 6px;
         cursor: pointer;
         font-weight: 500;
-        transition: all 0.2s ease;
-    }
-
-    .remove-btn:hover {
-        background-color: #d32f2f;
-        transform: translateY(-2px);
     }
 
     .cart-total {
@@ -93,7 +87,7 @@
         font-weight: 700;
         color: #e0e0e0;
         margin: 2rem 0;
-        text-align: right;
+        text-align: center;
         padding: 1.2rem;
         background-color: #2d2d2d;
         border-radius: 10px;
@@ -101,33 +95,9 @@
 
     .cart-actions {
         display: flex;
-        justify-content: space-between;
+        justify-content: center;
         gap: 1.5rem;
         margin-top: 2rem;
-    }
-
-    .btn-back {
-        background-color: transparent;
-        color: #bb86fc;
-        border: 2px solid #bb86fc;
-        font-weight: 600;
-        padding: 12px 24px;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        flex: 1;
-        text-align: center;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-
-    .btn-back:hover {
-        background-color: #bb86fc;
-        color: #121212;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(187, 134, 252, 0.2);
     }
 
     .btn-checkout {
@@ -137,19 +107,6 @@
         padding: 12px 24px;
         border-radius: 8px;
         border: none;
-        transition: all 0.3s ease;
-        flex: 1;
-        text-align: center;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-
-    .btn-checkout:hover {
-        background-color: #3d8b40;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.2);
     }
 
     .empty-cart {
@@ -158,20 +115,37 @@
         color: #b0b0b0;
     }
 
-    .empty-cart .btn {
-        margin-top: 1.5rem;
-        padding: 10px 20px;
+    .fixed-bottom {
+        display: none !important;
+    }
+
+    @media (max-width: 768px) {
+        .cart-container {
+            padding: 1rem;
+        }
+
+        .cart-item {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .quantity-controls {
+            justify-content: center;
+        }
     }
 </style>
 
 <div class="container">
     <div class="cart-container">
-        <h2 class="mb-4">Ваша корзина</h2>
+        <div class="cart-header">
+            <h2>Ваша корзина</h2>
+        </div>
 
         {% if not cart_items %}
         <div class="empty-cart">
             <p>Ваша корзина пуста</p>
-            <a href="/" class="btn btn-primary">
+            <a href="/" class="btn btn-primary mt-3">
                 <i class="bi bi-arrow-left"></i> Вернуться в каталог
             </a>
         </div>
@@ -218,9 +192,6 @@
             </div>
 
             <div class="cart-actions">
-                <a href="/" class="btn-back">
-                    <i class="bi bi-arrow-left"></i> Назад в каталог
-                </a>
                 <form action="/checkout" method="post">
                     <button type="submit" class="btn-checkout">
                         <i class="bi bi-bag-check"></i> Оформить заказ
