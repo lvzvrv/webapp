@@ -6,6 +6,7 @@
     <title>Tea High</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 
     <style>
         :root {
@@ -31,6 +32,11 @@
         .fixed-bottom {
             background-color: var(--dark-bg);
             border-top: 1px solid var(--border-color);
+            z-index: 1000;
+        }
+
+        #cart-counter {
+            transition: all 0.3s;
         }
     </style>
 </head>
@@ -40,10 +46,10 @@
     </main>
 
     {% if not request.path.startswith('/cart') %}
-    <div class="fixed-bottom d-block d-lg-none" style="z-index: 1000;">
+    <div class="fixed-bottom d-block d-lg-none">
         <div class="container-fluid p-0">
             <a href="/cart" class="btn btn-primary w-100 rounded-0 py-3 d-flex justify-content-center align-items-center"
-               style="background-color: var(--secondary-color); border: none;">
+                style="background-color: var(--secondary-color); border: none;">
                 Корзина (<span id="cart-counter">{{ cart_items_count if cart_items_count else 0 }}</span>)
             </a>
         </div>
@@ -53,15 +59,35 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        let cartCount = parseInt(document.getElementById('cart-counter')?.textContent) || 0;
-
-        function updateCartCounter(change) {
-            cartCount += change;
+        // Глобальная функция для обновления счетчика
+        function updateCartCounter(addedCount) {
             const counter = document.getElementById('cart-counter');
             if (counter) {
-                counter.textContent = cartCount;
+                let currentCount = parseInt(counter.textContent) || 0;
+                currentCount += addedCount;
+                counter.textContent = currentCount;
+                counter.classList.add('animate__animated', 'animate__bounceIn');
+                setTimeout(() => {
+                    counter.classList.remove('animate__animated', 'animate__bounceIn');
+                }, 1000);
             }
         }
+
+        // Проверяем наличие session_id при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!document.cookie.includes('session_id') && !window.location.pathname.includes('/cart')) {
+                // Генерируем новый session_id если его нет
+                document.cookie = `session_id=${Math.random().toString(36).substring(2)}; max-age=${30*24*60*60}; path=/; SameSite=Lax; Secure`;
+            }
+        });
     </script>
+
+    <script>
+    // Функция подтверждения действий
+    function confirmAction(message) {
+        return confirm(message || "Вы уверены, что хотите выполнить это действие?");
+    }
+</script>
+
 </body>
 </html>

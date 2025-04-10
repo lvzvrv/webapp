@@ -5,77 +5,147 @@
     .product-container {
         background-color: #1e1e1e;
         border-radius: 12px;
-        padding: 2rem;
+        padding: 0;
         margin: 2rem auto;
         max-width: 900px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+    }
+
+    .product-section {
+        padding: 2.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .product-section:last-child {
+        border-bottom: none;
     }
 
     .product-images {
         width: 100%;
-        max-width: 600px;
-        margin: 0 auto 2rem;
+        background-color: #2d2d2d;
+        text-align: center;
     }
 
     .carousel {
-        max-height: 500px;
+        position: relative;
+    }
+
+    .carousel-inner {
+        border-radius: 0;
+    }
+
+    .carousel-item {
+        text-align: center;
+        padding: 20px;
     }
 
     .carousel-item img {
-        width: 100%;
-        height: 400px;
+        max-height: 500px;
+        width: auto;
+        max-width: 100%;
+        margin: 0 auto;
         object-fit: contain;
         border-radius: 8px;
     }
 
-    .product-info {
-        text-align: center;
-        padding: 0 1rem;
+    .carousel-indicators {
+        bottom: 20px;
+        margin: 0;
+        padding: 0 30px;
+    }
+
+    .carousel-indicators [data-bs-target] {
+        width: 40px;
+        height: 4px;
+        background-color: rgba(255, 255, 255, 0.3);
+        border: none;
+        border-radius: 2px;
+        margin: 0 5px;
+        transition: all 0.3s ease;
+    }
+
+    .carousel-indicators .active {
+        background-color: rgba(255, 255, 255, 0.9);
     }
 
     .product-title {
         color: #bb86fc;
-        font-size: 2rem;
+        font-size: 2.2rem;
         margin-bottom: 1rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .product-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
     }
 
     .product-price {
         color: #4caf50;
-        font-size: 1.5rem;
+        font-size: 2rem;
         font-weight: 700;
-        margin: 1.5rem 0;
+    }
+
+    .product-type {
+        background-color: rgba(187, 134, 252, 0.15);
+        color: #bb86fc;
+        padding: 0.5rem 1.2rem;
+        border-radius: 20px;
+        font-size: 1rem;
+        font-weight: 500;
+        letter-spacing: 0.5px;
     }
 
     .product-description {
-        text-align: left;
-        line-height: 1.6;
-        margin-bottom: 2rem;
+        line-height: 1.8;
+        font-size: 1.1rem;
+        color: #e0e0e0;
+        margin-bottom: 1.5rem;
+    }
+
+    .quantity-section {
+        background-color: rgba(30, 30, 30, 0.7);
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 2rem 0;
     }
 
     .quantity-controls {
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 15px;
-        margin: 2rem 0;
+        gap: 25px;
+        margin: 1.5rem 0;
     }
 
     .quantity-btn {
-        width: 40px;
-        height: 40px;
+        width: 50px;
+        height: 50px;
         border-radius: 50%;
         background-color: #bb86fc;
         color: white;
         border: none;
-        font-size: 1.2rem;
+        font-size: 1.5rem;
         display: flex;
         align-items: center;
         justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .quantity-btn:hover {
+        background-color: #9a67cb;
+        transform: scale(1.1);
     }
 
     .quantity-display {
-        font-size: 1.2rem;
+        font-size: 1.5rem;
         font-weight: 600;
-        min-width: 30px;
+        min-width: 50px;
         text-align: center;
     }
 
@@ -83,61 +153,110 @@
         background-color: #4caf50;
         color: white;
         font-weight: 600;
-        padding: 12px 24px;
+        padding: 16px 32px;
         border-radius: 8px;
         border: none;
-        font-size: 1.1rem;
+        font-size: 1.2rem;
         display: block;
         margin: 0 auto;
+        transition: all 0.3s;
+        width: 100%;
+        max-width: 350px;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-add-to-cart:hover {
+        background-color: #3d8b40;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
     }
 
     @media (max-width: 768px) {
         .product-container {
-            padding: 1rem;
-            margin: 1rem auto;
+            margin: 0 auto;
+            border-radius: 0;
+            box-shadow: none;
         }
 
-        .carousel-item img {
-            height: 300px;
+        .product-section {
+            padding: 1.5rem;
         }
 
         .product-title {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        .product-price {
+            font-size: 1.6rem;
+        }
+
+        .carousel-item img {
+            max-height: 350px;
+        }
+
+        .quantity-controls {
+            gap: 15px;
+        }
+
+        .quantity-btn {
+            width: 45px;
+            height: 45px;
+            font-size: 1.3rem;
+        }
+
+        .btn-add-to-cart {
+            padding: 14px 24px;
+            font-size: 1.1rem;
         }
     }
 </style>
 
 <div class="container">
     <div class="product-container">
-        <div class="product-images">
-            <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
-                <div class="carousel-inner">
-                    {% for image in product.images %}
-                    <div class="carousel-item {% if loop.first %}active{% endif %}">
-                        <img src="{{ image }}" class="d-block w-100" alt="{{ product.name }}">
+        <!-- Секция с изображениями -->
+        <div class="product-section">
+            <div class="product-images">
+                <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        {% for image in product.images %}
+                        <div class="carousel-item {% if loop.first %}active{% endif %}">
+                            <img src="{{ image }}" class="d-block" alt="{{ product.name }}">
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
+                    {% if product.images|length > 1 %}
+                    <div class="carousel-indicators">
+                        {% for image in product.images %}
+                        <button type="button" data-bs-target="#productCarousel"
+                                data-bs-slide-to="{{ loop.index0 }}"
+                                {% if loop.first %}class="active"{% endif %}></button>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
-                <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                </button>
-                <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                </button>
             </div>
         </div>
 
-        <div class="product-info">
+        <!-- Секция с описанием -->
+        <div class="product-section">
             <h1 class="product-title">{{ product.name }}</h1>
-            <p class="product-price">{{ product.price }} ₽</p>
+            <div class="product-meta">
+                <span class="product-price">{{ product.price }} ₽</span>
+                <span class="product-type">{{ product.type }}</span>
+            </div>
             <div class="product-description">
                 {{ product.description }}
             </div>
+        </div>
 
-            <div class="quantity-controls">
-                <button class="quantity-btn" id="decrease-quantity">-</button>
-                <span class="quantity-display" id="quantity-display">1</span>
-                <button class="quantity-btn" id="increase-quantity">+</button>
+        <!-- Секция с количеством и кнопкой -->
+        <div class="product-section">
+            <div class="quantity-section">
+                <div class="quantity-controls">
+                    <button class="quantity-btn" id="decrease-quantity">-</button>
+                    <span class="quantity-display" id="quantity-display">1</span>
+                    <button class="quantity-btn" id="increase-quantity">+</button>
+                </div>
             </div>
 
             <form action="/add-to-cart" method="post" id="add-to-cart-form">
@@ -157,9 +276,12 @@
         const quantityInput = document.getElementById('quantity-input');
         const increaseBtn = document.getElementById('increase-quantity');
         const decreaseBtn = document.getElementById('decrease-quantity');
+        const addToCartForm = document.getElementById('add-to-cart-form');
+        const submitBtn = addToCartForm.querySelector('button[type="submit"]');
 
         let quantity = 1;
 
+        // Управление количеством
         increaseBtn.addEventListener('click', function() {
             quantity++;
             updateQuantity();
@@ -176,6 +298,62 @@
             quantityDisplay.textContent = quantity;
             quantityInput.value = quantity;
         }
+
+        // Обработка добавления в корзину
+        addToCartForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Добавляем...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/add-to-cart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams(new FormData(this))
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.status === "success") {
+                    // Обновляем счетчик корзины
+                    if (typeof updateCartCounter === 'function') {
+                        updateCartCounter(quantity);
+                    }
+
+                    // Визуальный фидбек
+                    submitBtn.textContent = '✓ Добавлено';
+                    setTimeout(() => {
+                        submitBtn.textContent = originalText;
+                        submitBtn.disabled = false;
+                    }, 1500);
+                } else {
+                    throw new Error(result.message || 'Ошибка сервера');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                submitBtn.textContent = 'Ошибка';
+                setTimeout(() => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }, 1500);
+            }
+        });
     });
+
+    // Функция обновления счетчика корзины (должна быть в base.html)
+    function updateCartCounter(count) {
+        const counter = document.getElementById('cart-counter');
+        if (counter) {
+            counter.textContent = count;
+            counter.classList.add('animate__animated', 'animate__bounceIn');
+            setTimeout(() => {
+                counter.classList.remove('animate__animated', 'animate__bounceIn');
+            }, 1000);
+        }
+    }
 </script>
 {% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .category-form-container {
+        background-color: #1e1e1e;
+        border-radius: 12px;
+        padding: 2rem;
+        margin: 2rem auto;
+        max-width: 600px;
+    }
+</style>
+
+<div class="container">
+    <div class="category-form-container">
+        <h2 class="mb-4">Добавить новую категорию</h2>
+
+        <form method="post" action="/admin/add-category">
+            <div class="mb-3">
+                <label for="display_name" class="form-label">Отображаемое название:</label>
+                <input type="text" class="form-control" id="display_name" name="display_name" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="type" class="form-label">Категория из БД:</label>
+                <select class="form-select" id="type" name="type" required>
+                    <option value="">Выберите тип товара</option>
+                    {% for product_type in existing_types %}
+                    <option value="{{ product_type }}">{{ product_type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="display_order" class="form-label">Индекс отображения:</label>
+                <input type="number" class="form-control" id="display_order" name="display_order" value="0" required>
+                <small class="text-muted">Чем меньше число, тем выше категория в списке</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+            <a href="/admin/categories" class="btn btn-secondary">Отмена</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

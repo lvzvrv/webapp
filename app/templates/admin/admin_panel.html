@@ -97,14 +97,14 @@
     }
 </style>
 
-<div class="admin-container">
-    <div class="admin-header">
-        <h1 class="admin-title">Админ-панель</h1>
-        <div>
-            <a href="/admin/add-product" class="btn btn-add">Добавить товар</a>
-            <a href="/" class="btn btn-back">На сайт</a>
-        </div>
+<div class="admin-header">
+    <h1 class="admin-title">Админ-панель</h1>
+    <div>
+        <a href="/admin/add-product" class="btn btn-add">Добавить товар</a>
+        <a href="/admin/categories" class="btn btn-secondary">Добавить категорию</a>
+        <a href="/" class="btn btn-back">На сайт</a>
     </div>
+</div>
 
     <div class="product-list">
         {% for product in products %}

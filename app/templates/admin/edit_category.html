@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .admin-form-container {
+        background-color: #1e1e1e;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-top: 2rem;
+        color: #e0e0e0;
+    }
+
+    .form-label {
+        color: #e0e0e0;
+        font-weight: 500;
+        margin-top: 1rem;
+    }
+
+    .form-control {
+        background-color: #2d2d2d;
+        border: 1px solid #333;
+        color: #e0e0e0;
+    }
+
+    .btn-submit {
+        background-color: #bb86fc;
+        border: none;
+        font-weight: 600;
+        padding: 10px 20px;
+        margin-top: 1.5rem;
+    }
+
+    .btn-delete {
+        background-color: #f44336;
+        border: none;
+        font-weight: 600;
+        padding: 10px 20px;
+        margin-top: 1.5rem;
+    }
+
+    .btn-submit:hover {
+        background-color: #9a67cb;
+    }
+</style>
+
+<div class="container">
+    <div class="admin-form-container">
+        <h2 class="mb-4">Редактирование категории</h2>
+
+        <form method="post" action="/admin/update-category/{{ category.id }}">
+            <div class="mb-3">
+                <label for="display_name" class="form-label">Отображаемое название:</label>
+                <input type="text" class="form-control" id="display_name" 
+                       name="display_name" value="{{ category.display_name }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Тип товаров:</label>
+                <input type="text" class="form-control" value="{{ category.type }}" readonly>
+                <small class="text-muted">Тип товаров нельзя изменить после создания категории</small>
+            </div>
+
+            <div class="mb-3">
+                <label for="display_order" class="form-label">Порядок отображения:</label>
+                <input type="number" class="form-control" id="display_order" 
+                       name="display_order" value="{{ category.display_order }}" required>
+                <small class="text-muted">Чем меньше число, тем выше категория в списке</small>
+            </div>
+
+            <button type="submit" class="btn btn-submit">Сохранить изменения</button>
+            <a href="/admin/categories" class="btn btn-secondary ms-2">Отмена</a>
+        </form>
+
+        <form method="post" action="/admin/delete-category/{{ category.id }}" class="mt-4">
+            <button type="submit" class="btn btn-delete" 
+                    onclick="return confirm('Вы уверены, что хотите удалить эту категорию?')">
+                Удалить категорию
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

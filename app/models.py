@@ -46,6 +46,15 @@ class Product(Base):
         return [image.image_path for image in product_images]  # Возвращаем список UR
 
 
+class Category(Base):
+    __tablename__ = "categories"
+
+    id = Column(Integer, primary_key=True)
+    display_name = Column(String, nullable=False)
+    type = Column(String, nullable=False, unique=True)
+    display_order = Column(Integer, default=0)
+
+    products = relationship("Product", primaryjoin="foreign(Product.type) == Category.type", viewonly=True)
 
 class ProductImage(Base):
     __tablename__ = "product_images"

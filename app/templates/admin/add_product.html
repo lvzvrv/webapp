@@ -43,6 +43,16 @@
 </style>
 
 <div class="container">
+    <div class="mb-3">
+    <label for="type" class="form-label">Тип товара:</label>
+    <select class="form-control" id="type" name="product_type" required>
+        <option value="">Выберите тип</option>
+        {% for category in categories %}
+        <option value="{{ category.type }}">{{ category.name }} ({{ category.type }})</option>
+        {% endfor %}
+    </select>
+    <small class="text-muted">Если нужного типа нет, сначала создайте категорию</small>
+</div>
     <div class="admin-form-container">
         <h2 class="mb-4">Добавить новый товар</h2>
 

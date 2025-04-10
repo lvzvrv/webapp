@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Управление категориями</h2>
+
+    <div class="list-group mt-4">
+        {% for category in categories|sort(attribute='display_order') %}
+        <div class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5>{{ category.display_name }}</h5>
+                    <small class="text-muted">Тип: {{ category.type }}</small>
+                    <span class="badge bg-primary ms-2">
+                        {{ category.products|length }} товаров
+                    </span>
+                    <span class="badge bg-secondary ms-2">
+                        Порядок: {{ category.display_order }}
+                    </span>
+                </div>
+                <div>
+                    <form action="/admin/delete-category/{{ category.id }}" method="post" style="display: inline;">
+                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                onclick="return confirm('Удалить категорию {{ category.display_name }}?')">
+                            Удалить
+                        </button>
+                    </form>
+                    <a href="/admin/edit-category/{{ category.id }}" class="btn btn-sm btn-outline-primary ms-2">
+                        Редактировать
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <a href="/admin/add-category" class="btn btn-primary mt-3">
+        Добавить новую категорию
+    </a>
+</div>
+{% endblock %}

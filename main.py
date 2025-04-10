@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, Depends, Form, status, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
@@ -85,26 +85,22 @@ def check_session(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, db: Session = Depends(get_db)):
+    categories = db.query(models.Category).all()
     products = db.query(models.Product).all()
+
     for product in products:
         product.images = product._get_image_urls(db)
 
     session_id = request.cookies.get("session_id", "")
     cart_items_count = get_cart_items_count(db, session_id)
 
-    token = request.cookies.get("Authorization")
-    user = None
-    if token:
-        user, token = check_session(request, db)
-        user = db.query(models.User).filter(models.User.username == token).first()
-
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
+            "categories": categories,
             "products": products,
-            "user": user,
-            "cart_items_count": cart_items_count  # Добавлено
+            "cart_items_count": cart_items_count
         }
     )
 
@@ -429,22 +425,41 @@ async def add_to_cart(
         quantity: int = Form(1),
         db: Session = Depends(get_db)
 ):
-    # Получаем или создаем идентификатор сессии
-    session_id = request.cookies.get("session_id", str(uuid.uuid4()))
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        session_id = str(uuid.uuid4())
 
-    # Проверяем существование товара
+    response = JSONResponse(content={
+        "status": "success",
+        "added_count": quantity,
+        "message": "Товар добавлен в корзину"
+    })
+
+    # Устанавливаем cookie с правильными атрибутами
+    response.set_cookie(
+        key="session_id",
+        value=session_id,
+        max_age=30 * 24 * 60 * 60,  # 30 дней
+        httponly=True,
+        secure=True,  # Для HTTPS
+        samesite='Lax'  # Разрешает передачу между страницами
+    )
+
+    # Проверка существования товара
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
     if not product:
-        raise HTTPException(status_code=404, detail="Товар не найден")
+        return JSONResponse(
+            content={"status": "error", "message": "Товар не найден"},
+            status_code=404
+        )
 
-    # Проверяем, есть ли уже такой товар в корзине
     cart_item = db.query(models.CartItem).filter(
         models.CartItem.session_id == session_id,
         models.CartItem.product_id == product_id
     ).first()
 
     if cart_item:
-        cart_item.quantity += quantity  # Увеличиваем количество на указанное значение
+        cart_item.quantity += quantity
     else:
         cart_item = models.CartItem(
             session_id=session_id,
@@ -455,11 +470,6 @@ async def add_to_cart(
 
     db.commit()
 
-    referer = request.headers.get('referer', '/')
-    response = RedirectResponse(url=referer, status_code=status.HTTP_303_SEE_OTHER)
-
-    if not request.cookies.get("session_id"):
-        response.set_cookie(key="session_id", value=session_id, httponly=True)
     return response
 
 
@@ -573,6 +583,208 @@ async def checkout(
     db.commit()
 
     return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@app.get("/admin/categories", response_class=HTMLResponse)
+def list_categories(
+        request: Request,
+        db: Session = Depends(get_db),
+        username: str = Depends(verify_admin)
+):
+    # Получаем уникальные типы товаров для создания категорий
+    existing_types = db.query(models.Product.type).distinct().all()
+    existing_types = [t[0] for t in existing_types if t[0]]
+
+    # Получаем существующие категории
+    categories = db.query(models.Category).all()
+
+    # Находим типы товаров, для которых нет категорий
+    missing_types = set(existing_types) - {c.type for c in categories}
+
+    return templates.TemplateResponse(
+        "admin/categories.html",
+        {
+            "request": request,
+            "categories": categories,
+            "missing_types": missing_types
+        }
+    )
+
+
+@app.get("/admin/add-category", response_class=HTMLResponse)
+def add_category_form(
+        request: Request,
+        db: Session = Depends(get_db),
+        username: str = Depends(verify_admin)
+):
+    # Получаем уникальные типы товаров для выпадающего списка
+    existing_types = db.query(models.Product.type).distinct().all()
+    existing_types = [t[0] for t in existing_types if t[0]]
+
+    # Получаем существующие категории, чтобы исключить уже использованные типы
+    existing_categories = db.query(models.Category.type).all()
+    existing_categories = [c[0] for c in existing_categories]
+
+    # Фильтруем типы, оставляя только те, что еще не использованы в категориях
+    available_types = [t for t in existing_types if t not in existing_categories]
+
+    return templates.TemplateResponse(
+        "admin/add_category.html",
+        {
+            "request": request,
+            "existing_types": available_types
+        }
+    )
+
+
+@app.post("/admin/add-category")
+async def add_category(
+        request: Request,
+        display_name: str = Form(...),
+        type: str = Form(...),
+        display_order: int = Form(0),
+        db: Session = Depends(get_db),
+        username: str = Depends(verify_admin)
+):
+    # Проверяем, что тип товара существует
+    if not db.query(models.Product).filter(models.Product.type == type).first():
+        raise HTTPException(
+            status_code=400,
+            detail=f"Тип товара '{type}' не существует. Сначала добавьте товары с таким типом."
+        )
+
+    # Проверяем, что категория с таким type еще не существует
+    if db.query(models.Category).filter(models.Category.type == type).first():
+        raise HTTPException(
+            status_code=400,
+            detail=f"Категория для типа '{type}' уже существует"
+        )
+
+    category = models.Category(
+        display_name=display_name,
+        type=type,
+        display_order=display_order
+    )
+
+    db.add(category)
+    db.commit()
+
+    return RedirectResponse(url="/admin/categories", status_code=303)
+
+@app.get("/admin/categories", response_class=HTMLResponse)
+def list_categories(
+        request: Request,
+        db: Session = Depends(get_db),
+        username: str = Depends(verify_admin)
+):
+    existing_types = db.query(Product.type).distinct().all()
+    existing_types = [t[0] for t in existing_types if t[0]]
+    categories = db.query(Category).all()
+    missing_types = set(existing_types) - {c.type for c in categories}
+
+    return templates.TemplateResponse(
+        "admin/categories.html",  # путь правильный
+        {
+            "request": request,
+            "categories": categories,
+            "missing_types": missing_types
+        }
+    )
+
+@app.get("/category/{category_type}", response_class=HTMLResponse)
+def category_products(
+        category_type: str,
+        request: Request,
+        db: Session = Depends(get_db)
+):
+    category = db.query(models.Category).filter(models.Category.type == category_type).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Категория не найдена")
+
+    products = db.query(models.Product).filter(models.Product.type == category_type).all()
+
+    for product in products:
+        product.images = product._get_image_urls(db)
+
+    session_id = request.cookies.get("session_id", "")
+    cart_items_count = get_cart_items_count(db, session_id)
+
+    return templates.TemplateResponse(
+        "category.html",  # Убедитесь, что имя файла совпадает
+        {
+            "request": request,
+            "category": category,
+            "products": products,
+            "cart_items_count": cart_items_count
+        }
+    )
+
+@app.post("/admin/delete-category/{category_id}")
+def delete_category(
+        category_id: int,
+        request: Request,
+        db: Session = Depends(get_db),
+        username: str = Depends(verify_admin)
+):
+    category = db.query(models.Category).filter(models.Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Категория не найдена")
+
+    try:
+        db.delete(category)
+        db.commit()
+        return RedirectResponse(url="/admin/categories", status_code=303)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ошибка при удалении категории: {str(e)}"
+        )
+
+@app.get("/admin/edit-category/{category_id}", response_class=HTMLResponse)
+def edit_category_form(
+        category_id: int,
+        request: Request,
+        db: Session = Depends(get_db),
+        username: str = Depends(verify_admin)
+):
+    category = db.query(models.Category).filter(models.Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Категория не найдена")
+
+    return templates.TemplateResponse(
+        "admin/edit_category.html",
+        {
+            "request": request,
+            "category": category,
+            "cart_items_count": get_cart_items_count(db, request.cookies.get("session_id", ""))
+        }
+    )
+
+@app.post("/admin/update-category/{category_id}")
+async def update_category(
+        category_id: int,
+        request: Request,
+        display_name: str = Form(...),
+        display_order: int = Form(...),
+        db: Session = Depends(get_db),
+        username: str = Depends(verify_admin)
+):
+    category = db.query(models.Category).filter(models.Category.id == category_id).first()
+    if not category:
+        raise HTTPException(status_code=404, detail="Категория не найдена")
+
+    try:
+        category.display_name = display_name
+        category.display_order = display_order
+        db.commit()
+        return RedirectResponse(url="/admin/categories", status_code=303)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ошибка при обновлении категории: {str(e)}"
+        )
 
 @app.get("/logout")
 def logout(request: Request, db: Session = Depends(get_db)):

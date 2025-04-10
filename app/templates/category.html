@@ -2,36 +2,16 @@
 
 {% block content %}
 <style>
-
-
-    .categories-section {
-        margin-bottom: 3rem;
-    }
-
-    .category-card {
-        background-color: #1e1e1e;
-        border-radius: 12px;
-        padding: 1.5rem;
-        transition: all 0.3s;
-        border: 1px solid #333;
-        height: 100%;
-    }
-
-    .category-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        border-color: #bb86fc;
+    .category-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #333;
     }
 
     .category-title {
         color: #bb86fc;
-        margin-bottom: 0.5rem;
+        font-size: 2rem;
     }
-
-    .product-count {
-        color: #4caf50;
-    }
-
 
     .product-grid {
         display: grid;
@@ -209,70 +189,74 @@
             grid-template-columns: 1fr;
         }
     }
+
+    .back-link {
+        display: inline-block;
+        margin: 2rem 0;
+        color: #bb86fc;
+        text-decoration: none;
+    }
+
+    .back-link:hover {
+        text-decoration: underline;
+    }
 </style>
 
-    <div class="container">
-    <section class="categories-section">
-    <h2 class="mb-4">Категории чая</h2>
+<div class="container">
+    <div class="category-header">
+        <h1 class="category-title">{{ category.display_name }}</h1>
+        <p>{{ products|length }} товаров в этой категории</p>
+    </div>
 
-    <div class="row row-cols-1 row-cols-md-3 g-4">
-        {% for category in categories|sort(attribute='display_order') %}
-        <div class="col">
-            <a href="/category/{{ category.type }}" class="text-decoration-none">
-                <div class="category-card">
-                    <h3 class="category-title">{{ category.display_name }}</h3>
-                    <p class="product-count">{{ category.products|length }} товаров</p>
+    {% if not products %}
+    <div class="alert alert-info">
+        В этой категории пока нет товаров
+    </div>
+    {% else %}
+    <div class="product-grid">
+        {% for product in products %}
+        <div class="product-card">
+            <div class="product-image-container" id="container-{{ product.id }}">
+                <div class="product-image-slider" id="slider-{{ product.id }}">
+                    {% for image in product.images %}
+                    <img src="{{ image }}" class="product-image" alt="{{ product.name }}">
+                    {% endfor %}
                 </div>
-            </a>
+                {% if product.images|length > 1 %}
+                <div class="slider-dots" id="dots-{{ product.id }}">
+                    {% for image in product.images %}
+                    <div class="slider-dot {% if loop.first %}active{% endif %}"
+                         data-index="{{ loop.index0 }}"></div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="product-body">
+                <h3 class="product-title">{{ product.name }}</h3>
+                <p class="product-desc">{{ product.small_description }}</p>
+                <p class="product-price">{{ product.price }} ₽</p>
+
+                <div class="product-actions">
+                    <a href="/product/{{ product.id }}" class="btn btn-details">
+                        Подробнее
+                    </a>
+                    <div class="quantity-control">
+                        <button class="quantity-btn minus" data-product-id="{{ product.id }}">-</button>
+                        <span class="quantity-display" id="qty-{{ product.id }}">1</span>
+                        <button class="quantity-btn plus" data-product-id="{{ product.id }}">+</button>
+                    </div>
+                    <button class="btn btn-add add-to-cart" data-product-id="{{ product.id }}">
+                        Добавить
+                    </button>
+                </div>
+            </div>
         </div>
         {% endfor %}
     </div>
-</section>
+    {% endif %}
 
-    <section>
-    <h2 class="mb-4">Все товары</h2>
-        <div class="product-grid">
-    {% for product in products %}
-    <div class="product-card">
-        <div class="product-image-container" id="container-{{ product.id }}">
-            <div class="product-image-slider" id="slider-{{ product.id }}">
-                {% for image in product.images %}
-                <img src="{{ image }}" class="product-image" alt="{{ product.name }}">
-                {% endfor %}
-            </div>
-            {% if product.images|length > 1 %}
-            <div class="slider-dots" id="dots-{{ product.id }}">
-                {% for image in product.images %}
-                <div class="slider-dot {% if loop.first %}active{% endif %}"
-                     data-index="{{ loop.index0 }}"></div>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </div>
-
-        <div class="product-body">
-            <h3 class="product-title">{{ product.name }}</h3>
-            <p class="product-desc">{{ product.small_description }}</p>
-            <p class="product-price">{{ product.price }} ₽</p>
-
-            <div class="product-actions">
-                <a href="/product/{{ product.id }}" class="btn btn-details">
-                    Подробнее
-                </a>
-                <div class="quantity-control">
-                    <button class="quantity-btn minus" data-product-id="{{ product.id }}">-</button>
-                    <span class="quantity-display" id="qty-{{ product.id }}">1</span>
-                    <button class="quantity-btn plus" data-product-id="{{ product.id }}">+</button>
-                </div>
-                <button class="btn btn-add add-to-cart" data-product-id="{{ product.id }}">
-                    Добавить
-                </button>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-    </section>
+    <a href="/" class="back-link">← Вернуться на главную</a>
 </div>
 
 <script>
