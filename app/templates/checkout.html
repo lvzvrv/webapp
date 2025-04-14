@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .checkout-container {
+        background-color: #1e1e1e;
+        border-radius: 12px;
+        padding: 2rem;
+        margin: 2rem auto;
+        max-width: 600px;
+    }
+
+    .checkout-title {
+        color: #bb86fc;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .form-label {
+        color: #e0e0e0;
+        font-weight: 500;
+        margin-top: 1rem;
+    }
+
+    .form-control {
+        background-color: #2d2d2d;
+        border: 1px solid #333;
+        color: #e0e0e0;
+        margin-bottom: 1rem;
+    }
+
+    .btn-submit {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        font-weight: 600;
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    .btn-submit:hover {
+        background-color: #3d8b40;
+    }
+</style>
+
+<div class="container">
+    <div class="checkout-container">
+        <h2 class="checkout-title">Оформление заказа</h2>
+
+        <form method="post" action="/process-checkout">
+            <div class="mb-3">
+                <label for="phone" class="form-label">Телефон для связи:</label>
+                <input type="tel" class="form-control" id="phone" name="phone"
+                       placeholder="+79991234567" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="telegram" class="form-label">Ваш Telegram (имя пользователя или ссылка):</label>
+                <input type="text" class="form-control" id="telegram" name="telegram"
+                       placeholder="@username или t.me/username" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="comment" class="form-label">Комментарий к заказу (необязательно):</label>
+                <textarea class="form-control" id="comment" name="comment" rows="3"
+                          placeholder="Особые пожелания, время доставки и т.д."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-submit">Подтвердить заказ</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Маска для телефона
+    document.getElementById('phone').addEventListener('input', function(e) {
+        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,1})(\d{0,3})(\d{0,3})(\d{0,2})(\d{0,2})/);
+        e.target.value = !x[2] ? x[1] : '+' + x[1] + ' (' + x[2] + ') ' + x[3] + (x[4] ? '-' + x[4] : '') + (x[5] ? '-' + x[5] : '');
+    });
+</script>
+{% endblock %}

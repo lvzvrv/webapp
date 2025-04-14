@@ -72,6 +72,9 @@ class Order(Base):
     product_id = Column(Integer, ForeignKey("products.id"))
     quantity = Column(Integer)
     total_price = Column(Float)
+    phone = Column(String)  # Новое поле
+    telegram = Column(String)  # Новое поле
+    comment = Column(String)  # Новое поле
     created_at = Column(DateTime, default=datetime.utcnow)
 
     owner = relationship("User", back_populates="orders")

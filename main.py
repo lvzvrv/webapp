@@ -17,6 +17,14 @@ import secrets
 from typing import Optional
 import uvicorn
 import uuid
+from fastapi import BackgroundTasks, Form
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+from pydantic import EmailStr
+from datetime import datetime
+from typing import Optional
+
+from app.database import SessionLocal, engine
+from app import models
 
 Base.metadata.create_all(bind=engine)
 
@@ -33,17 +41,17 @@ ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "secure_admin_password_123"  # В реальном проекте используйте переменные окружения
 security = HTTPBasic()
 
-
-def get_cart_items_count(db: Session, session_id: str) -> int:
-    if not session_id:
-        return 0
-    try:
-        return db.query(models.CartItem).filter(
-            models.CartItem.session_id == session_id
-        ).count()
-    except Exception as e:
-        print(f"Error getting cart items count: {e}")
-        return 0
+# Настройки почты (замените на свои)
+conf = ConnectionConfig(
+    MAIL_USERNAME="teahighshop@mail.ru",
+    MAIL_PASSWORD="X1Gu9XWVvbhFBBKs0cKF",
+    MAIL_FROM="teahighshop@mail.ru",
+    MAIL_PORT=465,
+    MAIL_SERVER="smtp.mail.ru",
+    MAIL_STARTTLS=False,
+    MAIL_SSL_TLS=True,
+    USE_CREDENTIALS=True
+)
 
 def verify_admin(credentials: HTTPBasicCredentials = Depends(security)):
     correct_username = secrets.compare_digest(credentials.username, ADMIN_USERNAME)
@@ -64,25 +72,6 @@ def get_db():
     finally:
         db.close()
 
-
-def check_session(request: Request, db: Session = Depends(get_db)):
-    token = check_cookies(request.cookies.get("Authorization"))
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_302_FOUND,
-            detail='Unauthorized',
-            headers={"Location": "/login"},
-        )
-    user = db.query(models.User).filter(models.User.username == token).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_302_FOUND,
-            detail='Unauthorized',
-            headers={"Location": "/login"},
-        )
-    return user, token
-
-
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request, db: Session = Depends(get_db)):
     categories = db.query(models.Category).all()
@@ -92,15 +81,16 @@ def index(request: Request, db: Session = Depends(get_db)):
         product.images = product._get_image_urls(db)
 
     session_id = request.cookies.get("session_id", "")
-    cart_items_count = get_cart_items_count(db, session_id)
-
+    items_count = db.query(models.CartItem) \
+        .filter(models.CartItem.session_id == session_id) \
+        .all()
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
             "categories": categories,
             "products": products,
-            "cart_items_count": cart_items_count
+            "cart_items_count": sum(item.quantity for item in items_count)
         }
     )
 
@@ -117,14 +107,12 @@ def admin_panel(
         product.images = product._get_image_urls(db)
 
     session_id = request.cookies.get("session_id", "")
-    cart_items_count = get_cart_items_count(db, session_id)
 
     return templates.TemplateResponse(
         "admin/admin_panel.html",
         {
             "request": request,
-            "products": products,
-            "cart_items_count": cart_items_count  # Добавлено
+            "products": products
         }
     )
 
@@ -135,14 +123,11 @@ def add_product_form(
         db: Session = Depends(get_db),
         username: str = Depends(verify_admin)
 ):
-    session_id = request.cookies.get("session_id", "")
-    cart_items_count = get_cart_items_count(db, session_id)
 
     return templates.TemplateResponse(
         "admin/add_product.html",
         {
-            "request": request,
-            "cart_items_count": cart_items_count  # Добавлено
+            "request": request
         }
     )
 
@@ -231,10 +216,7 @@ def delete_product(
 
 
 # Остальные маршруты (логин, регистрация, профиль и т.д.)
-@app.get("/profile")
-def profile(request: Request, result=Depends(check_session)):
-    user = result[0]
-    return templates.TemplateResponse("profile.html", {"request": request, "user": user})
+
 
 
 @app.get("/login")
@@ -269,43 +251,6 @@ def register(request: Request, username: str = Form(...), password: str = Form(.
     return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
 
-@app.get("/orders")
-def list_orders(request: Request, db: Session = Depends(get_db), result=Depends(check_session)):
-    user = result[0]
-    orders = db.query(models.Order).filter(models.Order.user_id == user.id).all()
-    for order in orders:
-        product = db.query(models.Product).filter(models.Product.id == order.product_id).first()
-        order.product = product
-
-    return templates.TemplateResponse("orders.html", {"request": request, "orders": orders, "user": user})
-
-
-@app.post("/buy")
-def buy_product(request: Request, product_id: int = Form(...), db: Session = Depends(get_db),
-                result=Depends(check_session)):
-    user = result[0]
-    product = db.query(models.Product).filter(models.Product.id == product_id).first()
-    if not product or product_id == 0:
-        return templates.TemplateResponse("error.html",
-                                          {"request": request, "message": "Товар не найден", "user": user})
-
-    if user.balance < product.price:
-        return templates.TemplateResponse("error.html",
-                                          {"request": request, "message": "Недостаточно средств", "user": user})
-
-    order = models.Order(
-        user_id=user.id,
-        product_id=product.id,
-        quantity=1,
-        total_price=product.price
-    )
-    db.add(order)
-    user.balance -= product.price
-    db.commit()
-
-    return RedirectResponse(url=f"/order/{order.id}", status_code=status.HTTP_302_FOUND)
-
-
 @app.get("/product/{product_id}", response_class=HTMLResponse)
 def product_details(product_id: int, request: Request, db: Session = Depends(get_db)):
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
@@ -314,30 +259,20 @@ def product_details(product_id: int, request: Request, db: Session = Depends(get
 
     product.images = product._get_image_urls(db)
     session_id = request.cookies.get("session_id", "")
-    cart_items_count = get_cart_items_count(db, session_id)
+    items_count = db.query(models.CartItem) \
+        .filter(models.CartItem.session_id == session_id) \
+        .all()
 
     return templates.TemplateResponse(
         "product_details.html",
         {
             "request": request,
             "product": product,
-            "cart_items_count": cart_items_count  # Добавлено
+            "cart_items_count": sum(item.quantity for item in items_count)
         }
     )
 
-@app.get("/order/{order_id}")
-@limiter.limit("2/second")
-def view_order(request: Request, order_id: int, db: Session = Depends(get_db), result=Depends(check_session)):
-    user = result[0]
-    order = db.query(models.Order).filter(models.Order.id == order_id).first()
-    if not order:
-        return templates.TemplateResponse("error.html",
-                                          {"request": request, "message": "Заказ не найден", "user": user})
 
-    product = db.query(models.Product).filter(models.Product.id == order.product_id).first()
-    order.product = product
-
-    return templates.TemplateResponse("order.html", {"request": request, "order": order, "user": user})
 
 
 @app.get("/admin/edit-product/{product_id}", response_class=HTMLResponse)
@@ -523,8 +458,7 @@ async def update_cart_item(
         db: Session = Depends(get_db)
 ):
     session_id = request.cookies.get("session_id")
-    if not session_id:
-        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
 
     cart_item = db.query(models.CartItem).filter(
         models.CartItem.id == item_id,
@@ -565,8 +499,7 @@ async def checkout(
         db: Session = Depends(get_db)
 ):
     session_id = request.cookies.get("session_id")
-    if not session_id:
-        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
 
     cart_items = db.query(models.CartItem).filter(
         models.CartItem.session_id == session_id
@@ -675,11 +608,10 @@ async def add_category(
 def list_categories(
         request: Request,
         db: Session = Depends(get_db),
-        username: str = Depends(verify_admin)
-):
-    existing_types = db.query(Product.type).distinct().all()
+        username: str = Depends(verify_admin)):
+    existing_types = db.query(models.Product.type).distinct().all()
     existing_types = [t[0] for t in existing_types if t[0]]
-    categories = db.query(Category).all()
+    categories = db.query(models.Category).all()
     missing_types = set(existing_types) - {c.type for c in categories}
 
     return templates.TemplateResponse(
@@ -707,7 +639,9 @@ def category_products(
         product.images = product._get_image_urls(db)
 
     session_id = request.cookies.get("session_id", "")
-    cart_items_count = get_cart_items_count(db, session_id)
+    items_count = db.query(models.CartItem) \
+        .filter(models.CartItem.session_id == session_id) \
+        .all()
 
     return templates.TemplateResponse(
         "category.html",  # Убедитесь, что имя файла совпадает
@@ -715,7 +649,7 @@ def category_products(
             "request": request,
             "category": category,
             "products": products,
-            "cart_items_count": cart_items_count
+            "cart_items_count": sum(item.quantity for item in items_count)
         }
     )
 
@@ -756,8 +690,7 @@ def edit_category_form(
         "admin/edit_category.html",
         {
             "request": request,
-            "category": category,
-            "cart_items_count": get_cart_items_count(db, request.cookies.get("session_id", ""))
+            "category": category
         }
     )
 
@@ -786,24 +719,146 @@ async def update_category(
             detail=f"Ошибка при обновлении категории: {str(e)}"
         )
 
-@app.get("/logout")
-def logout(request: Request, db: Session = Depends(get_db)):
-    token = request.cookies.get("Authorization")
-    if token:
-        check_session(request, db)
-        response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
-        response.delete_cookie(key="Authorization")
-        return response
 
-@app.get("/logout")
-def logout(request: Request, db: Session = Depends(get_db)):
-    token = request.cookies.get("Authorization")
-    if token:
-        check_session(request, db)
-        response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
-        response.delete_cookie(key="Authorization")
-        return response
 
+
+
+
+# Форма оформления заказа
+@app.get("/checkout", response_class=HTMLResponse)
+def checkout_form(request: Request):
+    return templates.TemplateResponse(
+        "checkout.html",
+        {
+            "request": request
+        }
+    )
+
+
+# Функция отправки почты
+async def send_order_email(email_to: EmailStr, order_data: dict):
+    message = MessageSchema(
+        subject=f"Новый заказ №{order_data['order_id']}",
+        recipients=[email_to],
+        body=f"""
+        Новый заказ на сайте Tea High!
+
+        Детали заказа:
+        - Номер: {order_data['order_id']}
+        - Телефон: {order_data['phone']}
+        - Telegram: {order_data['telegram']}
+        - Комментарий: {order_data['comment'] or 'Нет комментария'}
+        - Сумма: {order_data['total_price']} ₽
+        - Дата: {order_data['created_at']}
+
+        Товары:
+        {order_data['products']}
+        """,
+        subtype="plain"
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(message)
+
+
+# Обработка оформления заказа
+@app.post("/process-checkout")
+async def process_checkout(
+        background_tasks: BackgroundTasks,
+        request: Request,
+        phone: str = Form(...),
+        telegram: str = Form(...),
+        comment: Optional[str] = Form(None),
+        db: Session = Depends(get_db)
+):
+
+    # Получаем товары из корзины
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        return RedirectResponse(url="/cart", status_code=303)
+
+    cart_items = db.query(models.CartItem).filter(
+        models.CartItem.session_id == session_id
+    ).all()
+
+    if not cart_items:
+        return RedirectResponse(url="/cart", status_code=303)
+
+    # Создаем заказы для каждого товара
+    products_info = []
+    total = 0
+    last_order = None
+
+    for item in cart_items:
+        product = db.query(models.Product).filter(models.Product.id == item.product_id).first()
+        if not product:
+            continue
+
+        order = models.Order(
+            product_id=product.id,
+            quantity=item.quantity,
+            total_price=product.price * item.quantity,
+            phone=phone,
+            telegram=telegram,
+            comment=comment
+        )
+        db.add(order)
+        products_info.append(f"- {product.name} x{item.quantity} = {product.price * item.quantity} ₽")
+        total += product.price * item.quantity
+        last_order = order
+
+    db.commit()
+
+    # Очищаем корзину
+    db.query(models.CartItem).filter(models.CartItem.session_id == session_id).delete()
+    db.commit()
+
+    if not last_order:
+        raise HTTPException(status_code=400, detail="Не удалось создать заказ")
+
+    # Подготовка данных для письма
+    order_data = {
+        "order_id": last_order.id,
+        "phone": phone,
+        "telegram": telegram,
+        "comment": comment,
+        "total_price": total,
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "products": "\n".join(products_info)
+    }
+
+    # Отправка письма в фоне
+    background_tasks.add_task(
+        send_order_email,
+        email_to="teahighshop@mail.ru",
+        order_data=order_data
+    )
+
+    return RedirectResponse(url=f"/order-success/{last_order.id}", status_code=303)
+
+
+# Страница успешного оформления
+@app.get("/order-success/{order_id}", response_class=HTMLResponse)
+def order_success(
+        order_id: int,
+        request: Request,
+        db: Session = Depends(get_db)
+):
+
+
+
+    order = db.query(models.Order).filter(models.Order.id == order_id).first()
+
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ не найден")
+
+    return templates.TemplateResponse(
+        "order_success.html",
+        {
+            "request": request,
+            "order": order
+        }
+    )
 
 if __name__ == "__main__":
     uvicorn.run(

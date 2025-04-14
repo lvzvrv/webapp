@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .success-container {
+        background-color: #1e1e1e;
+        border-radius: 12px;
+        padding: 2rem;
+        margin: 2rem auto;
+        max-width: 600px;
+        text-align: center;
+    }
+
+    .success-icon {
+        color: #4caf50;
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .success-title {
+        color: #4caf50;
+        margin-bottom: 1rem;
+    }
+
+    .order-info {
+        background-color: #2d2d2d;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        text-align: left;
+    }
+
+    .info-item {
+        margin-bottom: 0.5rem;
+    }
+
+    .info-label {
+        color: #bb86fc;
+        font-weight: 500;
+    }
+
+    .btn-back {
+        background-color: #bb86fc;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        font-weight: 600;
+        margin-top: 1rem;
+    }
+
+    .btn-back:hover {
+        background-color: #9a67cb;
+    }
+</style>
+
+<div class="container">
+    <div class="success-container">
+        <div class="success-icon">
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+        <h2 class="success-title">Заказ успешно оформлен!</h2>
+        <p>Мы свяжемся с вами в ближайшее время для подтверждения заказа.</p>
+
+        <div class="order-info">
+            <div class="info-item">
+                <span class="info-label">Номер заказа:</span> {{ order.id }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Телефон:</span> {{ order.phone }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Telegram:</span> {{ order.telegram }}
+            </div>
+            {% if order.comment %}
+            <div class="info-item">
+                <span class="info-label">Комментарий:</span> {{ order.comment }}
+            </div>
+            {% endif %}
+        </div>
+
+        <a href="/" class="btn btn-back">Вернуться на главную</a>
+    </div>
+</div>
+{% endblock %}
